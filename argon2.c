@@ -160,15 +160,6 @@ int argon2_hash(const uint32_t t_cost, const uint32_t m_cost,
         memcpy(hash, out, hashlen);
     }
 
-    /* if encoding requested, write it */
-    if (encoded && encodedlen) {
-        if (encode_string(encoded, encodedlen, &context, type) != ARGON2_OK) {
-            clear_internal_memory(out, hashlen); /* wipe buffers if error */
-            clear_internal_memory(encoded, encodedlen);
-            free(out);
-            return ARGON2_ENCODING_FAIL;
-        }
-    }
     clear_internal_memory(out, hashlen);
     free(out);
 
@@ -284,11 +275,6 @@ int argon2_verify(const char *encoded, const void *pwd, const size_t pwdlen,
 
     ctx.pwd = (uint8_t *)pwd;
     ctx.pwdlen = (uint32_t)pwdlen;
-
-    ret = decode_string(&ctx, encoded, type);
-    if (ret != ARGON2_OK) {
-        goto fail;
-    }
 
     /* Set aside the desired result, and get a new buffer. */
     desired_result = ctx.out;
@@ -441,11 +427,4 @@ const char *argon2_error_message(int error_code) {
     default:
         return "Unknown error code";
     }
-}
-
-size_t argon2_encodedlen(uint32_t t_cost, uint32_t m_cost, uint32_t parallelism,
-                         uint32_t saltlen, uint32_t hashlen, argon2_type type) {
-  return strlen("$$v=$m=,t=,p=$$") + strlen(argon2_type2string(type, 0)) +
-         numlen(t_cost) + numlen(m_cost) + numlen(parallelism) +
-         b64len(saltlen) + b64len(hashlen) + numlen(ARGON2_VERSION_NUMBER) + 1;
 }
